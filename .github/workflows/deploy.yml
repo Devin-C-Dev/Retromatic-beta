@@ -1,0 +1,28 @@
+# GitHub Actions - 自动部署到 EdgeOne Pages
+# 当代码推送到 main 分支时自动触发部署
+
+name: Deploy to EdgeOne Pages
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:  # 允许手动触发
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout 代码
+      uses: actions/checkout@v3
+
+    - name: 设置 Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '16'
+
+    - name: 部署到 EdgeOne Pages
+      run: |
+        echo "代码已推送到 GitHub，EdgeOne 会自动检测并部署"
+        echo "请在 EdgeOne 控制台查看部署状态"
+        echo "或手动触发部署"

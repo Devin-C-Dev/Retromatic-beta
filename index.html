@@ -377,6 +377,49 @@
             filter: contrast(118%) brightness(100%) grayscale(100%) saturate(0%);
         }
 
+        /* 拍立得青色调滤镜 - 彩色偏青 */
+        .polaroid-cyan-filter {
+            filter:
+                brightness(1.08)
+                contrast(1.02)
+                saturate(0.95)
+                sepia(0.05)
+                hue-rotate(-5deg);
+        }
+
+        /* 拍立得青色调叠加层 */
+        .polaroid-cyan-filter::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(
+                ellipse at center,
+                transparent 50%,
+                rgba(180, 220, 230, 0.08) 80%,
+                rgba(160, 200, 210, 0.12) 100%
+            );
+            pointer-events: none;
+            z-index: 10;
+            mix-blend-mode: soft-light;
+        }
+
+        /* 拍立得青色调颗粒噪点 */
+        .polaroid-cyan-filter::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            opacity: 0.15;
+            pointer-events: none;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='fine-grain'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23fine-grain)'/%3E%3C/svg%3E");
+            mix-blend-mode: overlay;
+            z-index: 11;
+        }
+
+        /* 拍立得青色调锐度 */
+        .polaroid-cyan-sharp {
+            filter: brightness(1.08) contrast(1.02) saturate(0.95) sepia(0.05) hue-rotate(-5deg);
+        }
+
         /* 滤镜选择器样式 */
         .filter-selector {
             display: flex;
@@ -568,6 +611,71 @@
             pointer-events: none;
             border-radius: inherit;
         }
+
+        /* 首次访问提示框样式 */
+        .first-visit-tip {
+            position: relative;
+            margin-top: 32px;
+            z-index: 25;
+        }
+
+        .first-visit-tip.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .tip-content {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 20px;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08),
+                        0 2px 8px rgba(0, 0, 0, 0.04),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+        }
+
+        .tip-text {
+            font-family: 'Work Sans', 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+            color: #1a1a1a;
+            letter-spacing: 0.02em;
+            line-height: 1.4;
+        }
+
+        .tip-close-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.04);
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+        }
+
+        .tip-close-btn:hover {
+            background: rgba(0, 0, 0, 0.08);
+            transform: scale(1.05);
+        }
+
+        .tip-close-btn:active {
+            transform: scale(0.95);
+        }
+
+        .tip-close-btn .material-symbols-outlined {
+            font-size: 14px;
+            color: #666;
+            line-height: 1;
+        }
     </style>
 </head>
 <body class="bg-[#f7f7f7] text-[#2d3432] font-space-grotesk selection:bg-primary selection:text-on-primary overflow-hidden">
@@ -648,12 +756,22 @@
                         <div class="absolute inset-0 bg-gradient-to-b from-black/40 to-transparent"></div>
                     </div>
                 </div>
+
+                <!-- 首次使用提示框 -->
+                <div id="first-visit-tip" class="first-visit-tip opacity-0 translate-y-2 transition-all duration-500 ease-out">
+                    <div class="tip-content">
+                        <span class="tip-text">请保持头部完整，正对镜头</span>
+                        <button id="tip-close-btn" class="tip-close-btn" onclick="app.closeFirstVisitTip()">
+                            <span class="material-symbols-outlined">close</span>
+                        </button>
+                    </div>
+                </div>
             </div>
 
             <!-- 吐出的相纸 -->
             <div id="ejected-photo" class="absolute left-1/2 opacity-0 z-10 cursor-pointer" style="top: 200px;" onclick="app.handlePhotoClick()">
                 <div class="polaroid bg-white polaroid-shadow transition-transform hover:scale-[1.02] active:scale-[0.98]">
-                    <div id="ejected-photo-area" class="polaroid-image-area bg-[#1a1a1a] overflow-hidden relative fragmt-bw-filter fragmt-bw-sharp">
+                    <div id="ejected-photo-area" class="polaroid-image-area bg-[#1a1a1a] overflow-hidden relative polaroid-cyan-filter polaroid-cyan-sharp">
                         <div class="vignette-light"></div>
                         <div class="instax-developing-pattern"></div>
                         <div id="shake-hint-text" class="shake-hint" style="display: none;">
@@ -709,9 +827,9 @@
     <div id="page-preview" class="page">
         <div class="flex-1 flex items-center justify-center p-4 overflow-auto bg-black">
             <div id="preview-photo" class="polaroid bg-white polaroid-shadow">
-                <div class="polaroid-image-area bg-[#1a1a1a] overflow-hidden relative cursor-pointer fragmt-bw-filter fragmt-bw-sharp" onclick="app.openFullscreen()">
+                <div class="polaroid-image-area bg-[#1a1a1a] overflow-hidden relative cursor-pointer polaroid-cyan-filter polaroid-cyan-sharp" onclick="app.openFullscreen()">
                     <div class="vignette-light"></div>
-                    <img id="preview-image-full" alt="Instax photo" class="w-full h-full" style="filter: grayscale(100%) contrast(118%) brightness(100%) saturate(0%);"/>
+                    <img id="preview-image-full" alt="Instax photo" class="w-full h-full" style="filter: brightness(1.08) contrast(1.02) saturate(0.95) sepia(0.05) hue-rotate(-5deg);"/>
                     <div class="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent pointer-events-none"></div>
                 </div>
             </div>
@@ -742,9 +860,9 @@
             <div id="gallery-photos" class="space-y-5 flex flex-col items-center px-5" style="min-height: 100vh; padding-left: min(20px, 1.5rem); padding-right: min(20px, 1.5rem);">
                 <!-- 空状态 -->
                 <div id="empty-gallery" class="text-center py-20 w-full">
-                    <span class="material-symbols-outlined text-6xl text-gray-300">photo_library</span>
-                    <p class="mt-4 text-gray-400 font-space-grotesk">还没有照片</p>
-                    <p class="text-sm text-gray-300">拍摄你的第一张拍立得吧！</p>
+                    <span class="material-symbols-outlined text-6xl text-gray-400">photo_library</span>
+                    <p class="mt-4 text-gray-400 font-space-grotesk text-lg">还没有照片</p>
+                    <p class="text-gray-400 font-space-grotesk text-base">拍摄你的第一张拍立得吧！</p>
                 </div>
             </div>
         </main>
@@ -769,7 +887,7 @@
         <button onclick="app.closeFullscreen()" class="absolute top-4 right-4 text-white z-10">
             <span class="material-symbols-outlined text-3xl">close</span>
         </button>
-        <img id="fullscreen-image" class="max-w-full max-h-full object-contain" alt="全屏预览" style="filter: brightness(1.12) contrast(0.95) saturate(0.85) sepia(0.08) blur(0.15px);"/>
+        <img id="fullscreen-image" class="max-w-full max-h-full object-contain" alt="全屏预览" style="filter: brightness(1.08) contrast(1.02) saturate(0.95) sepia(0.05) hue-rotate(-5deg);"/>
     </div>
 
     <script>
@@ -779,7 +897,10 @@
             capturedImageData: null,
             cameraStream: null,
             currentFacingMode: 'user', // 当前摄像头模式：'user'（前置）或 'environment'（后置）
-            currentFilter: 'fragmt-bw', // 默认使用FRGMT BW黑白滤镜
+            currentFilter: 'polaroid-cyan', // 默认使用拍立得青色调滤镜
+
+            // 首次访问提示
+            firstVisitTipShown: false,
 
             // 状态机变量
             progressTimer: null,
@@ -808,6 +929,11 @@
                     setTimeout(() => {
                         this.showCameraPermissionModal();
                     }, 500);
+
+                    // 显示首次访问提示框（延迟显示，避免与权限提示冲突）
+                    setTimeout(() => {
+                        this.showFirstVisitTip();
+                    }, 1500);
                 } catch (error) {
                     console.error('初始化错误:', error);
                 }
@@ -826,6 +952,28 @@
                 if (modal) {
                     modal.classList.add('hidden');
                     modal.classList.remove('flex');
+                }
+            },
+
+            // 显示首次访问提示框
+            showFirstVisitTip() {
+                if (this.firstVisitTipShown) return;
+
+                const tip = document.getElementById('first-visit-tip');
+                if (tip) {
+                    // 延迟添加show类，触发动画
+                    setTimeout(() => {
+                        tip.classList.add('show');
+                    }, 100);
+                }
+            },
+
+            // 关闭首次访问提示框
+            closeFirstVisitTip() {
+                const tip = document.getElementById('first-visit-tip');
+                if (tip) {
+                    tip.classList.remove('show');
+                    this.firstVisitTipShown = true;
                 }
             },
 
@@ -966,6 +1114,9 @@
                     return;
                 }
 
+                // 关闭首次访问提示框
+                this.closeFirstVisitTip();
+
                 // 隐藏底部导航栏（强制隐藏）
                 const cameraNav = document.getElementById('camera-nav');
                 if (cameraNav) {
@@ -991,29 +1142,6 @@
                 // 裁剪并绘制视频中心部分为正方形
                 ctx.drawImage(video, startX, startY, size, size, 0, 0, size, size);
 
-                // 手动应用黑白滤镜（兼容性更好）
-                const imageData = ctx.getImageData(0, 0, size, size);
-                const data = imageData.data;
-
-                for (let i = 0; i < data.length; i += 4) {
-                    // 转换为灰度值（加权平均，人眼感知）
-                    const gray = data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114;
-
-                    // 应用对比度（118%）
-                    const contrast = 1.18;
-                    const adjusted = ((gray / 255 - 0.5) * contrast + 0.5) * 255;
-
-                    // 限制在 0-255 范围内
-                    const clamped = Math.max(0, Math.min(255, adjusted));
-
-                    data[i] = clamped;     // R
-                    data[i + 1] = clamped; // G
-                    data[i + 2] = clamped; // B
-                    // Alpha 通道不变
-                }
-
-                ctx.putImageData(imageData, 0, 0);
-
                 // 转换为 base64
                 this.capturedImageData = canvas.toDataURL('image/jpeg', 0.95);
 
@@ -1024,10 +1152,8 @@
                 // 初始化状态机：进入处理中状态
                 this.enterProcessingState();
 
-                // 模拟处理后开始显影
-                setTimeout(() => {
-                    this.handleAISuccess(this.capturedImageData);
-                }, 2000);
+                // 调用 Coze API
+                this.callCozeAPI();
             },
 
             enterProcessingState() {
@@ -1099,32 +1225,43 @@
                 progressBar.style.width = value + '%';
             },
 
-            async callAIAPI() {
+            async callCozeAPI() {
                 try {
-                    console.log('📤 发起 API 请求到 /api/generate');
-                    console.log('🖼️ 图片数据长度:', this.uploadedImageData?.length || 0);
+                    console.log('📤 发起 Coze API 请求到 /api/generate');
+                    console.log('🖼️ 图片数据长度:', this.capturedImageData?.length || 0);
 
                     const response = await fetch('/api/generate', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
-                            image: this.uploadedImageData
+                            image: this.capturedImageData
                         })
                     });
 
                     console.log('📥 收到响应，状态码:', response.status);
 
                     const result = await response.json();
-                    console.log('📊 响应内容:', result);
+                    console.log('📊 响应内容:', JSON.stringify(result, null, 2));
+                    if (result.data) {
+                        console.log('📦 data 字段完整内容:', JSON.stringify(result.data, null, 2));
+                    }
+                    console.log('🖼️ 返回的 imageUrl 长度:', result.imageUrl?.length || 0);
+                    console.log('🖼️ 返回的 imageUrl 前100字符:', result.imageUrl?.substring(0, 100) || 'empty');
 
-                    if (result.success && result.imageUrl) {
-                        this.handleAISuccess(result.imageUrl);
+                    if (result.success) {
+                        // API 调用成功，继续显影流程
+                        const finalImage = result.imageUrl || this.capturedImageData;
+                        console.log('✅ 使用的最终图片数据长度:', finalImage.length);
+                        console.log('🔄 是否使用 API 生成图片:', finalImage !== this.capturedImageData);
+                        this.handleAISuccess(finalImage);
                     } else {
-                        throw new Error(result.error || 'AI 生成失败');
+                        throw new Error(result.error || 'Coze API 调用失败');
                     }
                 } catch (error) {
-                    console.error('❌ API 调用出错:', error);
-                    this.handleAIError(error);
+                    console.error('❌ Coze API 调用出错:', error);
+                    // 即使 API 失败，也继续使用原始照片进行显影
+                    console.log('⚠️ 使用原始照片继续显影流程');
+                    this.handleAISuccess(this.capturedImageData);
                 }
             },
 
@@ -1134,6 +1271,10 @@
                     clearInterval(this.progressTimer);
                     this.progressTimer = null;
                 }
+
+                // 保存API返回的图片数据（重要：覆盖摄像头拍摄的原始数据）
+                this.capturedImageData = imageData;
+                console.log('✅ 已更新 capturedImageData 为 API 生成的图片');
 
                 // 执行冲刺动画：0.5s内补满到100%
                 const progressBar = document.getElementById('progress-bar');
@@ -1205,14 +1346,14 @@
                 const ejectedImage = document.getElementById('ejected-image');
                 const ejectedPhotoArea = document.getElementById('ejected-photo-area');
 
-                // 更新相纸区域的滤镜类为FRGMT BW
-                ejectedPhotoArea.classList.remove('instax-filter', 'fragmt-bw-filter', 'fragmt-bw-sharp');
-                ejectedPhotoArea.classList.add('fragmt-bw-filter', 'fragmt-bw-sharp');
+                // 更新相纸区域的滤镜类为拍立得青色调
+                ejectedPhotoArea.classList.remove('instax-filter', 'fragmt-bw-filter', 'fragmt-bw-sharp', 'polaroid-cyan-filter', 'polaroid-cyan-sharp');
+                ejectedPhotoArea.classList.add('polaroid-cyan-filter', 'polaroid-cyan-sharp');
 
                 ejectedImage.src = this.capturedImageData;
 
-                // 设置FRGMT BW初始状态
-                ejectedImage.style.filter = 'brightness(2.8) contrast(0.4) grayscale(1) blur(1.0px)';
+                // 设置拍立得青色调初始状态
+                ejectedImage.style.filter = 'brightness(2.8) contrast(0.4) blur(1.0px)';
 
                 // 移除之前的显影动画类（如果存在）
                 ejectedImage.classList.remove('developing');
@@ -1308,15 +1449,17 @@
                     // 动态更新照片的滤镜（从白色渐变到最终效果）
                     const progress = this.developProgress / 100;
 
-                    // FRGMT BW 黑白滤镜显影动画
-                    // 进度 0%: brightness(2.8) contrast(0.4) grayscale(1) blur(1.0px)
-                    // 进度 100%: grayscale(100%) contrast(118%) brightness(100%)
-                    const brightness = 2.8 - (2.8 - 1.0) * progress;
-                    const contrast = 0.4 + (1.18 - 0.4) * progress;
-                    const grayscale = 1; // 始终保持黑白
+                    // 拍立得青色调滤镜显影动画
+                    // 进度 0%: brightness(2.8) contrast(0.4) blur(1.0px)
+                    // 进度 100%: brightness(1.08) contrast(1.02) saturate(0.95) sepia(0.05) hue-rotate(-5deg)
+                    const brightness = 2.8 - (2.8 - 1.08) * progress;
+                    const contrast = 0.4 + (1.02 - 0.4) * progress;
+                    const saturate = progress * 0.95;
+                    const sepia = progress * 0.05;
+                    const hueRotate = progress * -5;
                     const blur = 1.0 - (1.0 - 0.1) * progress; // 1.0 -> 0.1
 
-                    ejectedImage.style.filter = `brightness(${brightness}) contrast(${contrast}) grayscale(${grayscale}) blur(${blur}px) saturate(0)`;
+                    ejectedImage.style.filter = `brightness(${brightness}) contrast(${contrast}) saturate(${saturate}) sepia(${sepia}) hue-rotate(${hueRotate}deg) blur(${blur}px)`;
 
                     if (this.developProgress >= 100) {
                         this.finishDeveloping();
@@ -1418,15 +1561,22 @@
                 // 关键修复：移除 img 标签的内联 filter，让父容器的 CSS 滤镜类生效
                 const ejectedImage = document.getElementById('ejected-image');
                 if (ejectedImage) {
-                    ejectedImage.style.filter = '';
-                    console.log('已移除 img 内联 filter，启用父容器 CSS 滤镜');
+                    // 设置为最终拍立得青色调效果
+                    ejectedImage.style.filter = 'brightness(1.08) contrast(1.02) saturate(0.95) sepia(0.05) hue-rotate(-5deg)';
+                    console.log('已应用拍立得青色调滤镜');
                 }
 
                 // 启用全屏下滑返回功能（显影完成后立即可用）
                 this.enableFullScreenSwipeToGoBack();
 
-                // 捕获带滤镜效果的照片数据，确保下载时和显示一致
-                try {
+                // 检查是否使用API生成的图片（URL格式）
+                const isApiGeneratedImage = this.capturedImageData && this.capturedImageData.startsWith('http');
+                console.log('🖼️ 是否为API生成的图片:', isApiGeneratedImage);
+
+                // 只有非API生成的图片才需要重新捕获带滤镜效果的数据
+                if (!isApiGeneratedImage) {
+                    // 捕获带滤镜效果的照片数据，确保下载时和显示一致
+                    try {
                     const ejectedImage = document.getElementById('ejected-image');
                     if (ejectedImage && ejectedImage.src) {
                         // 创建canvas来渲染滤镜效果
@@ -1443,8 +1593,8 @@
                         ctx.fillStyle = '#ffffff';
                         ctx.fillRect(0, 0, captureWidth, captureHeight);
 
-                        // 绘制图片并应用FRGMT BW滤镜
-                        ctx.filter = 'grayscale(100%) contrast(118%) brightness(100%) saturate(0%)';
+                        // 绘制图片并应用拍立得青色调滤镜
+                        ctx.filter = 'brightness(1.08) contrast(1.02) saturate(0.95) sepia(0.05) hue-rotate(-5deg)';
                         ctx.drawImage(ejectedImage, 0, 0, captureWidth, captureHeight);
 
                         // 转换为base64
@@ -1453,6 +1603,9 @@
                     }
                 } catch (e) {
                     console.error('捕获滤镜效果失败，使用原始数据:', e);
+                }
+                } else {
+                    console.log('✅ 使用API生成的图片，跳过重新捕获');
                 }
 
                 try {
@@ -1571,8 +1724,8 @@
                 previewImg.src = photo.image;
                 // 移除动画类，直接显示已显影完成的效果
                 previewImg.classList.remove('developing');
-                // 应用FRGMT BW滤镜
-                previewImg.style.filter = 'grayscale(100%) contrast(118%) brightness(100%) saturate(0%)';
+                // 应用拍立得青色调滤镜
+                previewImg.style.filter = 'brightness(1.08) contrast(1.02) saturate(0.95) sepia(0.05) hue-rotate(-5deg)';
 
                 this.showPage('preview');
             },
@@ -1933,8 +2086,8 @@
                 // 移除 crossOrigin 避免 CORS 问题
 
                 img.onload = () => {
-                    // 应用FRGMT BW黑白滤镜
-                    ctx.filter = 'grayscale(100%) contrast(118%) brightness(100%) saturate(0%)';
+                    // 应用拍立得青色调滤镜
+                    ctx.filter = 'brightness(1.08) contrast(1.02) saturate(0.95) sepia(0.05) hue-rotate(-5deg)';
 
                     // 绘制图片 - 无圆角裁剪
                     ctx.save();
@@ -2058,7 +2211,7 @@
 
                 const fullscreenImage = document.getElementById('fullscreen-image');
                 fullscreenImage.src = photo.image;
-                fullscreenImage.style.filter = 'grayscale(100%) contrast(118%) brightness(100%) saturate(0%)';
+                fullscreenImage.style.filter = 'brightness(1.08) contrast(1.02) saturate(0.95) sepia(0.05) hue-rotate(-5deg)';
                 document.getElementById('fullscreen-modal').classList.remove('hidden');
                 document.getElementById('fullscreen-modal').classList.add('flex');
             },
@@ -2097,12 +2250,12 @@
                         console.log(`生成照片 ${index} 的 HTML，时间: ${photo.dateTime}`);
                         console.log(`照片 ${index} 的 image 数据长度:`, photo.image ? photo.image.length : 0);
 
-                        // 使用FRGMT BW黑白滤镜
-                        const filterStyle = 'grayscale(100%) contrast(118%) brightness(100%) saturate(0%)';
+                        // 使用拍立得青色调滤镜
+                        const filterStyle = 'brightness(1.08) contrast(1.02) saturate(0.95) sepia(0.05) hue-rotate(-5deg)';
 
                         return `
                         <article class="polaroid bg-white polaroid-shadow transition-transform hover:scale-[1.02] active:scale-[0.98] cursor-pointer mx-auto" onclick="app.showPreviewFromGallery(${index})">
-                            <div class="polaroid-image-area overflow-hidden relative bg-[#1a1a1a] fragmt-bw-filter fragmt-bw-sharp">
+                            <div class="polaroid-image-area overflow-hidden relative bg-[#1a1a1a] polaroid-cyan-filter polaroid-cyan-sharp">
                                 <div class="vignette-light"></div>
                                 <img class="w-full h-full" src="${photo.image}" alt="拍立得照片" style="filter: ${filterStyle};"/>
                                 <div class="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent pointer-events-none"></div>
